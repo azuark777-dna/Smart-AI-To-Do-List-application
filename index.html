@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🤖 Smart AI To-Do</title>
+
+<style>
+  :root{
+    --bg: #0f1724;
+    --card: #0b1220;
+    --muted: #9aa4b2;
+    --accent: #7c5cff;
+    --accent-2: #00d4ff;
+    --glass: rgba(255,255,255,0.03);
+    --success: #2bd39b;
+    --danger: #ff6b6b;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    padding:28px;
+    background: radial-gradient(1200px 400px at 10% 10%, rgba(124,92,255,0.08), transparent),
+                linear-gradient(180deg,#071022 0%, #071826 100%);
+    color:#e8eef6;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    font-size:15px;
+    line-height:1.4;
+  }
+
+  .app{
+    max-width:1100px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns: 1fr 420px;
+    gap:22px;
+    align-items:start;
+  }
+
+  header{
+    grid-column: 1 / -1;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  header h1{
+    margin:0;
+    font-size:20px;
+    display:flex;
+    gap:12px;
+    align-items:center;
+  }
+  header .sub{
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border-radius:14px;
+    padding:18px;
+    box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .left{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  form.row{
+    display:grid;
+    grid-template-columns: 1fr 120px;
+    gap:12px;
+    align-items:end;
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+  input[type="text"], input[type="datetime-local"], input[type="number"], select {
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    background:var(--glass);
+    border:1px solid rgba(255,255,255,0.03);
+    color:inherit;
+    outline:none;
+  }
+
+  .muted-btn{
+    background: none;
+    border:1px solid rgba(255,255,255,0.04);
+    color:var(--muted);
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+  }
+
+  button{
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));
+    border:0;
+    padding:10px 14px;
+    border-radius:10px;
+    color:#00121a;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow: 0 6px 20px rgba(124,92,255,0.12);
+  }
+
+  .task-list{ display:grid; gap:10px; margin-top:6px; }
+  .task{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    padding:12px;
+    border-radius:12px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+    border:1px solid rgba(255,255,255,0.02);
+  }
+  .task .meta{ flex:1; }
+  .badge{
+    display:inline-block;
+    padding:6px 8px;
+    border-radius:10px;
+    background:rgba(255,255,255,0.03);
+    color:var(--muted);
+    font-size:12px;
+  }
+  .order-item{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    align-items:center;
+    padding:10px;
+    border-radius:10px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.12));
+  }
+
+  .complete{
+    background: linear-gradient(90deg,var(--success), #16c784);
+    color:#012018;
+    padding:8px 12px;
+    border-radius:8px;
+    border:none;
+    cursor:pointer;
+  }
+  .delete{ background:none; border:0; color:var(--danger); cursor:pointer; font-weight:600; }
+  .empty{ color:var(--muted); padding:12px; text-align:center; border-radius:10px; border:1px dashed rgba(255,255,255,0.03); }
+
+  @media (max-width:980px){
+    .app{grid-template-columns: 1fr; padding:18px;}
+    .right-col{order:2}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🤖 Smart To-Do — Local "AI" Prioritizer</h1>
+      <div class="sub">Heuristic-based suggestions • Local data (no network)</div>
+    </header>
+
+    <main class="left">
+      <section class="card">
+        <strong>New Task</strong>
+        <form id="task-form" class="row" autocomplete="off">
+          <input id="title" type="text" placeholder="Task title" required />
+          <select id="priority">
+            <option value="3">High</option>
+            <option value="2" selected>Medium</option>
+            <option value="1">Low</option>
+          </select>
+          <input id="estimate" type="number" min="5" step="5" value="30" />
+          <input id="tags" type="text" placeholder="tags: design, meeting" style="grid-column:1/-1" />
+          <input id="deadline" type="datetime-local" style="grid-column:1/-1" />
+          <div style="grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;">
+            <button type="submit">Add Task</button>
+            <button id="clear-btn" class="muted-btn" type="button">Clear</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <strong>Tasks</strong>
+        <div id="tasks" class="task-list"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;justify-content:flex-end;">
+          <button id="smart-btn" class="muted-btn">🤖 Smart Suggest</button>
+          <button id="auto-schedule" class="muted-btn">🗓 Auto Schedule Today</button>
+        </div>
+      </section>
+    </main>
+
+    <aside class="right-col">
+      <section class="card">
+        <strong>Suggested Order</strong>
+        <div id="suggested" class="task-list"></div>
+      </section>
+      <section class="card">
+        <strong>Today's Schedule</strong>
+        <div id="schedule" class="task-list"></div>
+      </section>
+    </aside>
+  </div>
+
+<script>
+const STORAGE_KEY = 'smart_todo_tasks_v1';
+
+function uid(){ return 't_' + Math.random().toString(36).slice(2,9); }
+function loadTasks(){ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+function saveTasks(tasks){ localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+function minutesUntil(d){ return d ? Math.max(0, Math.round((new Date(d)-new Date())/60000)) : Infinity; }
+function escapeHtml(str=''){ return str.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+
+function renderTasks(){
+  const list=document.getElementById('tasks'); const tasks=loadTasks(); list.innerHTML='';
+  if(!tasks.length){ list.innerHTML='<div class="empty">No tasks yet.</div>'; return; }
+  tasks.forEach(t=>{
+    const d=document.createElement('div'); d.className='task';
+    d.innerHTML=`<div class="meta"><h3>${escapeHtml(t.title)}</h3>
+      <div><span class="badge">${t.priority==3?'High':t.priority==2?'Medium':'Low'}</span>
+      <span class="badge">${t.estimate} min</span>
+      <span class="badge">${t.deadline?new Date(t.deadline).toLocaleString():'No deadline'}</span></div></div>
+      <div><button class="complete" data-id="${t.id}">${t.done?'Undo':'Complete'}</button>
+      <button class="delete" data-id="${t.id}">Delete</button></div>`;
+    list.appendChild(d);
+  });
+}
+
+function computeScores(tasks){
+  const P=10; const now=new Date();
+  return tasks.map(t=>{
+    const p=+t.priority||2; const e=+t.estimate||30; const d=t.deadline?new Date(t.deadline):null;
+    let boost=0; const m=minutesUntil(d);
+    if(m<=60)boost=50; else if(m<=360)boost=30; else if(m<=1440)boost=18;
+    const penalty=Math.log2(Math.max(e,5))*2;
+    const raw=p*P+boost-penalty;
+    return {...t,score:raw,mins:m,explanation:`p=${p} boost=${boost} -${penalty.toFixed(1)}`};
+  });
+}
+
+function renderSuggested(arr){
+  const el=document.getElementById('suggested'); el.innerHTML='';
+  if(!arr.length){ el.innerHTML='<div class="empty">No suggestions yet.</div>'; return; }
+  arr.forEach((t,i)=>{
+    const d=document.createElement('div'); d.className='order-item';
+    d.innerHTML=`<div>${i+1}. ${escapeHtml(t.title)}<div class="tiny">${t.explanation}</div></div>
+    <div class="pill">${Math.round(t.score)}</div>`;
+    el.appendChild(d);
+  });
+}
+
+document.getElementById('task-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const t={id:uid(),title:title.value,priority:priority.value,estimate:+estimate.value,tags:tags.value,deadline:deadline.value,done:false};
+  const tasks=loadTasks(); tasks.push(t); saveTasks(tasks); renderTasks(); e.target.reset();
+});
+
+tasks.addEventListener('click',e=>{
+  const id=e.target.dataset.id; if(!id)return;
+  const tasks=loadTasks(); const t=tasks.find(x=>x.id===id);
+  if(e.target.classList.contains('delete')) tasks.splice(tasks.indexOf(t),1);
+  if(e.target.classList.contains('complete')) t.done=!t.done;
+  saveTasks(tasks); renderTasks();
+});
+
+document.getElementById('smart-btn').addEventListener('click',()=>{
+  const tasks=loadTasks().filter(t=>!t.done); const s=computeScores(tasks).sort((a,b)=>b.score-a.score); renderSuggested(s);
+});
+
+renderTasks();
+</script>
+</body>
+</html>
